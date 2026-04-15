@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "code-graph-kit": {
+      "command": "code-graph-kit",
+      "args": ["mcp"],
+      "env": {
+        "PROJECT_PATH": "/absolute/path/to/your/project"
+      }
+    }
+  }
+}

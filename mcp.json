@@ -1,11 +1,12 @@
 {
   "mcpServers": {
     "code-graph-kit": {
-      "command": "code-graph-kit",
-      "args": ["mcp"],
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/your/project"
-      }
+      "command": "/home/vaishalishiv/.pyenv/shims/python3",
+      "args": [
+        "/home/vaishalishiv/Documents/graph-code/code-graph-kit-release/src/mcp_server.py",
+        "--project",
+        "/home/vaishalishiv/Documents/graph-code/code-graph-kit-release/sample_project"
+      ]
     }
   }
 }

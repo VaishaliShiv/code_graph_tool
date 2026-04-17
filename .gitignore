@@ -10,3 +10,22 @@ build/
 *.tar.gz
 .env
 .DS_Store
+Thumbs.db
+
+# Virtual environments
+.venv/
+venv/
+env/
+.tox/
+.eggs/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Native extensions
+*.pyd
+*.so
+*.egg

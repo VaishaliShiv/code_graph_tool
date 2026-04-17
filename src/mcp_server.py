@@ -21,6 +21,10 @@ import os
 import json
 import time
 import argparse
+import threading
+import socket
+import webbrowser
+from http.server import HTTPServer
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -29,12 +33,14 @@ try:
     from src.graph_db import GraphDB
     from src.embeddings import EmbeddingEngine, hybrid_search, detect_query_mode, CrossEncoderReranker
     from src.blast_radius import BlastRadiusAnalyzer
+    from src.cli import DashboardHandler
 except ImportError:
     sys.path.insert(0, _HERE)
     from parser import UniversalParser
     from graph_db import GraphDB
     from embeddings import EmbeddingEngine, hybrid_search, detect_query_mode, CrossEncoderReranker
     from blast_radius import BlastRadiusAnalyzer
+    from cli import DashboardHandler
 
 
 class MCPServer:
@@ -134,6 +140,42 @@ class MCPServer:
             },
         }
     
+    # ─── Dashboard (background web server) ──────────────
+
+    def _find_free_port(self, preferred=8765):
+        """Return preferred port if free, else pick a random free port."""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", preferred))
+                return preferred
+        except OSError:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", 0))
+                return s.getsockname()[1]
+
+    def _start_dashboard(self):
+        """Start the dashboard HTTP server in a background thread."""
+        port = self._find_free_port(8765)
+        DashboardHandler.project_path = self.project_path
+        DashboardHandler.db_path = self.db_path
+        self._dashboard_server = HTTPServer(("0.0.0.0", port), DashboardHandler)
+        self._dashboard_port = port
+
+        thread = threading.Thread(
+            target=self._dashboard_server.serve_forever,
+            daemon=True,
+        )
+        thread.start()
+
+        url = f"http://localhost:{port}"
+        sys.stderr.write(f"[mcp] Dashboard running at {url}\n")
+        sys.stderr.flush()
+
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+
     # ─── Activity logging helper ───────────────────────
 
     def _log(self, op, target, time_ms, files_with, extra=None):
@@ -348,6 +390,13 @@ class MCPServer:
         sys.stderr.write(f"[mcp] Code Graph Kit server started for: {self.project_path}\n")
         sys.stderr.write(f"[mcp] {len(self.tools)} tools available\n")
         sys.stderr.flush()
+
+        # Auto-start dashboard so user can see live results in browser
+        try:
+            self._start_dashboard()
+        except Exception as e:
+            sys.stderr.write(f"[mcp] Dashboard failed to start: {e}\n")
+            sys.stderr.flush()
         
         for line in sys.stdin:
             line = line.strip()

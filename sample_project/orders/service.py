@@ -58,6 +58,24 @@ class OrderService:
             raise PermissionError("Not your order")
         return order
     
+    def delay_order(self, token: str, order_id: int, delayed_until: str) -> dict:
+        """Delay a pending order to a future datetime.
+
+        Args:
+            token: JWT auth token
+            order_id: The order to delay
+            delayed_until: ISO 8601 datetime string (e.g. '2026-04-20T14:00:00')
+
+        Returns:
+            Updated order dict with status 'delayed' and delayed_until set
+        """
+        order = self.get_order_status(token, order_id)
+        if order["status"] != "pending":
+            raise ValueError("Can only delay pending orders")
+        order["status"] = "delayed"
+        order["delayed_until"] = delayed_until
+        return order
+
     def cancel_order(self, token: str, order_id: int) -> bool:
         """Cancel a pending order.
         
